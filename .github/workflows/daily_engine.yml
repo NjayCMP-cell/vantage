@@ -1,0 +1,38 @@
+name: VANTAGE Daily Engine
+
+on:
+  schedule:
+    - cron: '0 23 * * *'  # 23:00 UTC = midnight Nigeria (WAT)
+  workflow_dispatch:        # allow manual trigger from GitHub UI
+
+jobs:
+  run-engine:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Chrome
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y google-chrome-stable
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install firebase-admin requests python-dotenv soccerdata rapidfuzz
+
+      - name: Write secrets to files
+        run: |
+          echo "${{ secrets.FIREBASE_SERVICE_ACCOUNT }}" > serviceAccountKey_vantage.json
+          echo "FOOTBALL_DATA_API_KEY=${{ secrets.FOOTBALL_DATA_API_KEY }}" > .env
+          echo "API_FOOTBALL_KEY=${{ secrets.API_FOOTBALL_KEY }}" >> .env
+
+      - name: Run engine
+        run: python main.py
